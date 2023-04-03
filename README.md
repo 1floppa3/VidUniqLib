@@ -1,7 +1,8 @@
 # VidUniqLib
 
-![Language](https://img.shields.io/badge/Language-Python3.10-yellow.svg?style=flat)
-![License](https://img.shields.io/pypi/l/VidUniqLib?color=blueviolet)
+![Python](https://img.shields.io/badge/Language-Python3.10-yellow.svg?style=flat)
+![License](https://img.shields.io/pypi/l/VidUniq?color=blueviolet)
+![Version](https://img.shields.io/pypi/v/VidUniq?color=orange)
 
 _**PyPi**_ Video Uniquelizer Library
 ###### The purpose of the library is to slightly modify the video so that it cannot be matched with the original video
