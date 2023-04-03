@@ -9,9 +9,9 @@ _**PyPi**_ Video Uniquelizer Library
 ## Installation
 Install the current version with [PyPI](https://pypi.org/project/VidUniqLib/):
 ```bash
-pip install VidUniqLib
+pip install VidUniq
 ```
-Or from Github:
+Or from GitHub:
 ```bash
 pip install https://github.com/1floppa3/VidUniqLib/archive/main.zip
 ```
@@ -19,7 +19,7 @@ pip install https://github.com/1floppa3/VidUniqLib/archive/main.zip
 ## Usage
 You can generate a token for clubhouse by going to the account section and generating a new token
 ```python
-from VideoUniquelizer import VideoUniquelizer
+from VidUniqLib import VideoUniquelizer
 
 url: str = 'https://some_invalid_site.site/api.php?wtf=invalid.mp4' #  Could be list
 path_list: list[str] = [ #  Could bee 'str' or 'pathlib.Path'
