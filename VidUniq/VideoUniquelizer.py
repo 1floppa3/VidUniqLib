@@ -40,21 +40,15 @@ class VideoUniquelizer:
         # Создать папку(и) если её нет
         path.mkdir(parents=True, exist_ok=True)
 
-        # Фильтры ffmpeg -filter_complex
-        filter_params = []
-        for c in 'rgb':  # red, green, blue
-            for r in 's':  # shadows, midtones, highlights
-                filter_params.append(f'colorbalance={c}{r}={random.uniform(-0.15, 0.15)}')
-
         for i, video_path in enumerate(self.path_list):
             clip = VideoFileClip(str(video_path))
 
             # Уникализация
-            clip = self.__uniquelize(clip)
+            clip = self.__uniquelize_fx(clip)
 
             # Сохраняем видео в папку
             clip.write_videofile(str(path.joinpath(self.__format_video_filename(i))),
-                                 ffmpeg_params=['-filter_complex', random.choice(filter_params)])
+                                 ffmpeg_params=['-filter_complex', self.__uniquelize_filter()])
 
         for i, url in enumerate(self.url_list):
             if not self.__download_video(i, Path(f'temp_{self.__format_url_filename(i)}.mp4')):
@@ -64,11 +58,11 @@ class VideoUniquelizer:
             clip = VideoFileClip(f'temp_{self.__format_url_filename(i)}.mp4')
 
             # Уникализация
-            clip = self.__uniquelize(clip)
+            clip = self.__uniquelize_fx(clip)
 
             # Сохраняем видео в папку
             clip.write_videofile(str(path.joinpath(self.__format_url_filename(i))),
-                                 ffmpeg_params=['-filter_complex', random.choice(filter_params)])
+                                 ffmpeg_params=['-filter_complex', self.__uniquelize_filter()])
             del clip
             os.remove(f'temp_{self.__format_url_filename(i)}.mp4')
 
@@ -83,11 +77,20 @@ class VideoUniquelizer:
         return False
 
     @staticmethod
-    def __uniquelize(clip: VideoFileClip) -> VideoFileClip:
+    def __uniquelize_fx(clip: VideoFileClip) -> VideoFileClip:
         # Эффекты video fx
         clip = vfx.fadein(clip, duration=2)  # Эффект появления
         clip = vfx.fadeout(clip, duration=2)  # Эффект затухания
         return clip
+
+    @staticmethod
+    def __uniquelize_filter():
+        # Фильтры ffmpeg -filter_complex
+        filter_params = []
+        for c in 'rgb':  # red, green, blue
+            for r in 's':  # shadows, midtones, highlights
+                filter_params.append(f'colorbalance={c}{r}={random.uniform(-0.15, 0.15)}')
+        return random.choice(filter_params)
 
     @staticmethod
     def __format_filename(name: str) -> str:
