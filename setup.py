@@ -20,7 +20,7 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/1floppa3/VidUniqLib',
-    download_url='https://github.com/1floppa3/VidUniqLib',
+    download_url='https://github.com/1floppa3/VidUniqLib/archive/main.zip',
     license='GPL-3.0 license, see LICENSE.md file',
     packages=['VidUniqLib'],
     install_requires=['requests', 'moviepy'],
