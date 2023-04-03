@@ -7,5 +7,5 @@
 from .VideoUniquelizer import VideoUniquelizer
 
 __author__ = '1Floppa3'
-__version__ = '1.0'
+__version__ = '1.1'
 __email__ = 'denis.kochetkov2006@gmail.com'

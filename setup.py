@@ -6,7 +6,7 @@ from setuptools import setup
 :copyright: (c) 2023 1Floppa3
 '''
 
-version = '1.0'
+version = '1.1'
 
 with open('README.md', encoding='utf-8') as f:
     long_description = f.read()
@@ -21,7 +21,7 @@ setup(
     long_description_content_type='text/markdown',
     url='https://github.com/1floppa3/VidUniqLib',
     download_url='https://github.com/1floppa3/VidUniqLib/archive/main.zip',
-    license='GPL-3.0 license, see LICENSE.md file',
+    license='GPL-3.0 license',
     packages=['VidUniqLib'],
     install_requires=['requests', 'moviepy'],
     python_requires='>=3.10',
