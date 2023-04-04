@@ -18,7 +18,6 @@ pip install https://github.com/1floppa3/VidUniqLib/archive/main.zip
 ```
 
 ## Usage
-You can generate a token for clubhouse by going to the account section and generating a new token
 ```python
 from VidUniq import VideoUniquelizer
 
