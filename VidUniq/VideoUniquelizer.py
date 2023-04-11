@@ -1,73 +1,126 @@
-import os
 import random
-import requests
 from http import HTTPStatus
 from pathlib import Path
+from typing import Any
 
-from moviepy.editor import VideoFileClip
+import requests
 import moviepy.video.fx.all as vfx
+from moviepy.editor import VideoFileClip
 
-VideoUniquelizer_Path_Alias = list[Path | str] | Path | str | None
-VideoUniquelizer_Url_Alias = list[str] | str | None
+from decorators import convert_string_to_path
+from utils import is_video_file, url_to_path
 
 
 class VideoUniquelizer:
-    def __init__(self, *, path: VideoUniquelizer_Path_Alias = None, url: VideoUniquelizer_Url_Alias = None):
-        self.path_list: list[Path] = []
-        self.url_list: list[str] = []
+    def __init__(self, verbose: bool):
+        self.clips_list: list[dict[str, Any]] = []
+        self.verbose = verbose
 
-        if path is not None:
-            for i in ([path], path)[isinstance(path, list)]:
-                if isinstance(i, str):
-                    i = Path(i)
+    @convert_string_to_path(['path'])
+    def add_video(self, *, path: Path | str | None = None, url: str | None = None,
+                  remove_after_save_uniquelized: bool = False) -> bool:
+        result = False
+        if path:
+            result |= self.add_video_by_path(path, remove_after_save_uniquelized)
 
-                if not i.exists():
-                    print(f'[WARNING] Path "{i}" is invalid. (Skip)')
-                    continue
+        if url:
+            result |= self.add_video_by_url(url)
+        return result
 
-                if i.is_file():
-                    self.path_list.append(i)
-                elif i.is_dir():
-                    [self.path_list.append(file) for file in i.iterdir()]
+    @convert_string_to_path(['path'])
+    def add_video_by_path(self, path: Path | str, remove_after_save_uniquelized: bool = False) -> bool:
+        if any(path == clip_data['path'] for clip_data in self.clips_list):
+            if self.verbose:
+                print(f'[WARNING] Path "{str(path)}" is already added to this VideoUniquelizer object. (Skip)')
+            return False
 
-        if url is not None:
-            self.url_list = ([url], url)[isinstance(url, list)]
+        if path.exists():
+            if path.is_dir():
+                for file in path.iterdir():
+                    if not file.is_file() or not is_video_file(str(file)):
+                        continue
+                    self.clips_list.append({'clip': VideoFileClip(str(file)),
+                                            'remove': remove_after_save_uniquelized,
+                                            'path': file,
+                                            'is_url': False})
+                return True
 
-    def uniquelize(self, path: Path | str):
-        if isinstance(path, str):
-            path = Path(path)
+            elif path.is_file() and is_video_file(str(path)):
+                self.clips_list.append({'clip': VideoFileClip(str(path)),
+                                        'remove': remove_after_save_uniquelized,
+                                        'path': path,
+                                        'is_url': False})
+                return True
 
-        # Создать папку(и) если её нет
-        path.mkdir(parents=True, exist_ok=True)
+        if self.verbose:
+            print(f'[WARNING] Path "{str(path)}" is invalid. (Skip)')
+        return False
 
-        for i, video_path in enumerate(self.path_list):
-            clip = VideoFileClip(str(video_path))
+    def add_video_by_url(self, url: str) -> bool:
+        filename = self.__format_filename(url_to_path(url))
+        dl_filename = Path(f'temp_{filename}')
 
-            # Уникализация
-            clip = self.__uniquelize_fx(clip)
+        if any(dl_filename == clip_data['path'] for clip_data in self.clips_list):
+            if self.verbose:
+                print(f'[WARNING] URL "{url}" is already added to this VideoUniquelizer object. (Skip)')
+            return False
 
-            # Сохраняем видео в папку
-            clip.write_videofile(str(path.joinpath(self.__format_video_filename(i))),
-                                 ffmpeg_params=['-filter_complex', self.__uniquelize_filter()])
+        if self.__download_video(url, dl_filename):
+            self.clips_list.append({'clip': VideoFileClip(str(dl_filename)),
+                                    'remove': True,
+                                    'path': dl_filename,
+                                    'is_url': True})
+            return True
 
-        for i, url in enumerate(self.url_list):
-            if not self.__download_video(i, Path(f'temp_{self.__format_url_filename(i)}.mp4')):
-                print(f'[WARNING] URL "{url}" is invalid. (Skip)')
-                continue
+        if self.verbose:
+            print(f'[WARNING] URL "{url}" is invalid. (Skip)')
+        return False
 
-            clip = VideoFileClip(f'temp_{self.__format_url_filename(i)}.mp4')
+    def uniquelize(self, *, fadein: int | None = None, fadeout: int | None = None,
+                   colorx: float | None = None, gamma: float | None = None,
+                   mirror_x: bool | None = None, mirror_y: bool | None = None):
+        for clip_data in self.clips_list:
+            # Applying video effects
+            clip = clip_data['clip']
+            if fadein:
+                clip = vfx.fadein(clip, duration=fadein)
+            if fadeout:
+                clip = vfx.fadeout(clip, duration=fadeout)
+            if colorx:
+                clip = vfx.colorx(clip, colorx)
+            if gamma:
+                clip = vfx.gamma_corr(clip, gamma)
+            if mirror_x:
+                clip = vfx.mirror_x(clip)
+            if mirror_y:
+                clip = vfx.mirror_y(clip)
+            clip_data['clip'] = clip
 
-            # Уникализация
-            clip = self.__uniquelize_fx(clip)
+    @convert_string_to_path(['folder'])
+    def save_videos(self, folder: Path | str):
+        # Create folder if not exists
+        folder.mkdir(parents=True, exist_ok=True)
 
-            # Сохраняем видео в папку
-            clip.write_videofile(str(path.joinpath(self.__format_url_filename(i))),
-                                 ffmpeg_params=['-filter_complex', self.__uniquelize_filter()])
-            del clip
-            os.remove(f'temp_{self.__format_url_filename(i)}.mp4')
+        for clip_data in self.clips_list:
+            filter_complex = ['-filter_complex', self.__uniquelize_filter()]
 
-    def __download_video(self, index: int, path: Path) -> bool:
-        response = requests.get(self.url_list[index])
+            # Save into folder
+            filename = clip_data['path'].stem
+
+            # Removing temp_ and second .mp4 from final path
+            if clip_data['is_url']:
+                filename = filename[len('temp_'):]
+                filename = filename[:-len('.mp4'-1)]
+
+            path = folder.joinpath(self.__format_filename(filename))
+            clip_data['clip'].write_videofile(str(path), ffmpeg_params=filter_complex)
+
+            if clip_data['remove']:
+                clip_data['path'].unlink()
+
+    @staticmethod
+    def __download_video(url: str, path: Path) -> bool:
+        response = requests.get(url)
         if response.status_code == HTTPStatus.OK:
             if len(response.content) == 0:
                 return False
@@ -77,29 +130,15 @@ class VideoUniquelizer:
         return False
 
     @staticmethod
-    def __uniquelize_fx(clip: VideoFileClip) -> VideoFileClip:
-        # Эффекты video fx
-        clip = vfx.fadein(clip, duration=2)  # Эффект появления
-        clip = vfx.fadeout(clip, duration=2)  # Эффект затухания
-        return clip
-
-    @staticmethod
     def __uniquelize_filter():
-        # Фильтры ffmpeg -filter_complex
+        # Slightly modify video colors
         filter_params = []
-        for c in 'rgb':  # red, green, blue
-            for r in 's':  # shadows, midtones, highlights
+        for c in 'rgb':  # 'rgb' - red, green, blue
+            for r in 's':  # 'smh' - shadows, midtones, highlights
                 filter_params.append(f'colorbalance={c}{r}={random.uniform(-0.15, 0.15)}')
         return random.choice(filter_params)
 
     @staticmethod
     def __format_filename(name: str) -> str:
-        return name + '_uniq' + '.mp4'
-
-    def __format_video_filename(self, index: int) -> str:
-        return self.__format_filename(self.path_list[index].stem)
-
-    def __format_url_filename(self, index: int) -> str:
-        deprecated_chars = r'<>:"/\|?*'
-        allowed_filename = ''.join(['.' if char in deprecated_chars else char for char in self.url_list[index]])
-        return self.__format_filename(allowed_filename)
+        # Uniquelized video filename pattern
+        return f'{name}_uniq.mp4'
