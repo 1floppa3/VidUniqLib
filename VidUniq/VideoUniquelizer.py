@@ -66,6 +66,8 @@ class VideoUniquelizer:
                                             'remove': remove_after_save_uniquelized,
                                             'path': file,
                                             'is_url': False})
+                    if self.verbose:
+                        print(f'#{len(self.clips_list)}. File "{str(file)}" was added')
                 return True
 
             elif path.is_file() and is_video_file(path):
@@ -73,6 +75,8 @@ class VideoUniquelizer:
                                         'remove': remove_after_save_uniquelized,
                                         'path': path,
                                         'is_url': False})
+                if self.verbose:
+                    print(f'#{len(self.clips_list)}. File "{str(path)}" was added')
                 return True
 
         if self.verbose:
@@ -99,6 +103,8 @@ class VideoUniquelizer:
                                     'remove': True,
                                     'path': dl_filename,
                                     'is_url': True})
+            if self.verbose:
+                print(f'#{len(self.clips_list)}. File "{str(dl_filename)}" was added')
             return True
 
         if self.verbose:
@@ -155,7 +161,7 @@ class VideoUniquelizer:
         # Create folder if not exists
         folder.mkdir(parents=True, exist_ok=True)
 
-        for clip_data in self.clips_list:
+        for idx, clip_data in enumerate(self.clips_list):
             filter_complex = ['-filter_complex', self.__get_random_colorbalance_filter()]
 
             filename = clip_data['path'].stem
@@ -165,11 +171,15 @@ class VideoUniquelizer:
                 filename = filename[len('temp_'):]
 
             path = folder.joinpath(self.__format_filename(filename))
-            clip_data['clip'].write_videofile(str(path), ffmpeg_params=filter_complex,
-                                              verbose=False, progress_bar=self.verbose)
+            clip_data['clip'].write_videofile(str(path), ffmpeg_params=filter_complex, verbose=False, logger=None)
+            if self.verbose:
+                print(f'[{idx+1}/{len(self.clips_list)}] Video "{str(path)}" successfully saved')
 
             if clip_data['remove']:
                 clip_data['path'].unlink()
+            if self.verbose:
+                print(f'[{idx + 1}/{len(self.clips_list)}] File "{clip_data["path"]}" was removed')
+
         return True
 
     @staticmethod
