@@ -21,14 +21,23 @@ pip install https://github.com/1floppa3/VidUniqLib/archive/main.zip
 ```python
 from VidUniq import VideoUniquelizer
 
-url: str = 'https://some_invalid_site.site/api.php?wtf=invalid.mp4' #  Could be list
-path_list: list[str] = [ #  Could bee 'str' or 'pathlib.Path'
+url = 'https://some_invalid_site.site/api.php?wtf=invalid.mp4'
+path_list = [
     'some_invalid_folder_IdnaP19f/',
     'some_invalid_file_dmAgo30z.mp4'
 ]
 
-uniq = VideoUniquelizer(path=path_list, url=url)
-uniq.uniquelize('uniquelized/')
+uniq = VideoUniquelizer(True)
+
+uniq.add_video(url=url)
+# uniq.add_video_by_url(url)  Also working
+
+for path in path_list:
+    uniq.add_video_by_path(path, remove_after_save_uniquelized=True)
+
+uniq.uniquelize(fadein=1, fadeout=3, speedx=1.1)
+
+uniq.save_videos('uniquelized_videos/')
 ```
 
 ## Example
