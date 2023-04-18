@@ -136,7 +136,7 @@ class VideoUniquelizer:
             if mirror_y:
                 clip = vfx.mirror_y(clip)
             if speedx:
-                clip = vfx.speedx(speedx)
+                clip = vfx.speedx(clip, speedx)
             clip_data['clip'] = clip
 
     @convert_string_to_path(['folder'])
