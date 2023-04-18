@@ -165,7 +165,8 @@ class VideoUniquelizer:
                 filename = filename[len('temp_'):]
 
             path = folder.joinpath(self.__format_filename(filename))
-            clip_data['clip'].write_videofile(str(path), ffmpeg_params=filter_complex)
+            clip_data['clip'].write_videofile(str(path), ffmpeg_params=filter_complex,
+                                              verbose=False, progress_bar=self.verbose)
 
             if clip_data['remove']:
                 clip_data['path'].unlink()
