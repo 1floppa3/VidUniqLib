@@ -6,7 +6,7 @@ from setuptools import setup
 :copyright: (c) 2023 1Floppa3
 '''
 
-version = '1.2.1'
+version = '2.0.0'
 
 with open('README.md', encoding='utf-8') as f:
     long_description = f.read()
@@ -16,14 +16,14 @@ setup(
     version=version,
     author='1Floppa3',
     author_email='denis.kochetkov2006@gmail.com',
-    description='A simple video uniquelizer',
+    description='A light video uniquelizer',
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/1floppa3/VidUniqLib',
     download_url='https://github.com/1floppa3/VidUniqLib/archive/main.zip',
     license='GPL-3.0 license',
     packages=['VidUniq'],
-    install_requires=['requests', 'moviepy'],
+    install_requires=['requests', 'moviepy', 'pathvalidate', 'filetype'],
     python_requires='>=3.10',
     classifiers=[
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
