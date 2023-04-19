@@ -38,7 +38,7 @@ class VideoUniquelizer:
         if url:
             result |= self.add_video_by_url(url)
 
-        if self.verbose:
+        if not result and self.verbose:
             print(f'[WARNING] No video was added by \'add_video()\'')
 
         return result
